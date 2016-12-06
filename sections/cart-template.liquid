@@ -1,0 +1,286 @@
+{% comment %}
+  This is your /cart template.
+{% endcomment %}
+
+<div id="CartSection" data-section-id="{{ section.id }}" data-section-type="cart-template" data-notes-enable="{{ section.settings.cart_notes_enable }}">
+  {% if cart.item_count > 0 %}
+
+    <form action="/cart" method="post" novalidate class="cart">
+
+      <div class="section-header">
+        <h1 class="section-header__title">{{ 'cart.general.title' | t }}</h1>
+      </div>
+      <div class="cart__row medium-down--hide cart__header-labels">
+        <div class="grid--full">
+          <div class="grid__item post-large--one-half push--post-large--one-half">
+            <div class="grid--full">
+              <div class="grid__item one-third medium-down--one-third">
+                <span class="h4">{{ 'cart.label.price' | t }}</span>
+              </div>
+              <div class="grid__item one-third medium-down--one-third text-center">
+                <span class="h4">{{ 'cart.label.quantity' | t }}</span>
+              </div>
+              <div class="grid__item one-third medium-down--one-third text-right">
+                <span class="h4">{{ 'cart.label.total' | t }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% comment %}
+        Loop through products in the cart
+      {% endcomment %}
+      <!-- added script tag for bold 3-1 -->
+      <script>mixed_cart = false;</script>
+      <!-- added next line to show paypal (bold)-->
+     
+      {% for item in cart.items %}
+      <!-- begin bold 3-1 -->
+      {% include 'bold-ro-price-fix' %}
+      {% assign prod_index = forloop.index0 %}
+      <input type="hidden" name="product_id[{{ forloop.index0 }}]" value="{{ item.product.id }}">
+      <input type="hidden" name="variant_id[{{ forloop.index0 }}]" value="{{ item.variant.id }}">
+      <input type="hidden" name="quantity[{{ forloop.index0 }}]" value="{{ item.quantity }}">
+      <!-- end bold 3-1 -->
+        
+        <div class="grid--full cart__row--table-large">
+
+            <div class="grid__item post-large--one-half">
+              <div class="grid">
+
+                <div class="grid__item one-third">
+                  <a href="{{ item.url | within: collections.all }}" class="cart__image">
+
+                    {% comment %}
+                      More image size options at:
+                        - http://docs.shopify.com/themes/filters/product-img-url
+                    {% endcomment %}
+                    <img src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}">
+                  </a>
+                </div>
+
+                <div class="grid__item two-thirds">
+                  <a href="{{ item.url }}" class="h5">
+                    {{ item.product.title }}
+                  </a>
+                  {% unless item.variant.title contains 'Default' %}
+                    <br>
+                    <small>{{ item.variant.title }}</small>
+                  {% endunless %}
+
+                  {% comment %}
+                    Optional, loop through custom product line items if available
+
+                    For more info on line item properties, visit:
+                      - http://docs.shopify.com/support/your-store/products/how-do-I-collect-additional-information-on-the-product-page-Like-for-a-monogram-engraving-or-customization
+                  {% endcomment %}
+                  
+                  {% assign propertySize = item.properties | size %}
+                  <span class="Bold-theme-hook-DO-NOT-DELETE bold_cart_item_properties" style="display:none !important;"></span>
+                  
+                  {% if propertySize > 0 %}
+                  
+                  {% for p in item.properties %}
+                  
+                  {% if p.first.first == '_' %}{% continue %}{% endif %}
+                  {% assign first_character_in_key = p.first | truncate: 1, '' %}
+                  {% unless p.last == blank or first_character_in_key == '_' %}
+                  
+                  {% if p.first == 'frequency_num' or p.first == 'frequency_type' or p.first == 'frequency_type_text' or p.first == 'group_id' or p.first == 'discounted_price' %}
+                  
+                  {% else %}
+                  <br>
+
+                  {{ p.first }}:
+
+                  {% comment %}
+                  Check if there was an uploaded file associated
+                  {% endcomment %}
+                  
+                  {% if p.last contains '/uploads/' %}
+                  <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
+                  {% else %}
+                  {{ p.last }}
+                  {% endif %}
+
+                  {% endif %}
+                  
+                  {% endunless %}
+                  
+                  {% endfor %}
+                  
+                  {% endif %}
+                  
+                  <!-- bold-ro-liquid -->
+                  {% if item.properties.frequency_num %}
+                  <script>mixed_cart = true;</script>
+                  <br>
+                  <span class="bold_ro_every">Every</span>
+                  <input type="hidden" name="{{ prod_index }}[number]" value="{{ item.properties.frequency_num }}" />
+                  <span class="bold_ro_frequency_num">{{ item.properties.frequency_num }}</span>
+                  {% endif %}
+                  {% if item.properties.frequency_type %}
+                  <input type="hidden" name="{{ prod_index }}[type_id]" value="{{ item.properties.frequency_type }}" />
+                  {% endif %}
+                  {% if item.properties.frequency_type_text %}
+                  <span class="bold_ro_frequency_type_text">{{ item.properties.frequency_type_text }}</span>
+                  {% endif %}
+                  {% if item.properties.group_id %}                  
+                  <input type="hidden" name="{{ prod_index }}[group_id]" value="{{ item.properties.group_id }}" />
+                  {% endif %}
+                  {% comment %}
+                  {% if item.properties._ro_unformatted_price %}
+                  <br><span class="bold_ro_discounted_price">Discounted Price</span>
+                  <span class="discounted_price_in_cart">{{ item.properties._ro_unformatted_price | money }}</span> <span class="bold_ro_each">each</span>
+                  {% endif %}
+                  {% endcomment %}
+                  <!-- bold-ro-liquid -->
+                  
+                  
+                  
+                  <!-- added class bold-ro-remove for bold 3-5 -->
+                  
+                  <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0" class="cart__remove bold-ro-remove">
+                    <small>{{ 'cart.general.remove' | t }}</small>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="grid__item post-large--one-half">
+              <div class="grid--full cart__row--table-large">
+
+                <div class="grid__item one-third">
+                  <span class="cart__mini-labels">{{ 'cart.label.price' | t }}</span>
+                  
+                  <!-- changed item.price to ro_item_price  bold 3-4 --> 
+                  <span class="h5"><span class="Bold-theme-hook-DO-NOT-DELETE bold_cart_item_price" style="display:none !important;"></span>{{ ro_item_price | money }}</span>
+                </div>
+
+                <div class="grid__item one-third text-center">
+                  <label for="updates_{{ item.key }}" class="cart__mini-labels">{{ 'cart.label.quantity' | t }}</label>
+                  <input type="number" class="cart__quantity-selector" name="updates[]" id="updates_{{ item.key }}" value="{{ item.quantity }}" min="0" aria-label="{{ 'cart.label.quantity' | t }}">
+                </div>
+
+                <div class="grid__item one-third text-right">
+                  <span class="cart__mini-labels">{{ 'cart.label.total' | t }}</span>
+                  <span class="h5">
+                    
+                    <!-- changed item.line_price to ro_line_item_price bold 3-4 -->
+                    {% if item.original_line_price != ro_line_item_price %}
+                    <small class="cart-item__original-price"><s>{{ item.original_line_price | money }}</s></small>
+                    {% endif %}
+                    
+                    <!-- changed item.line_price to ro_line_item_price bold 3-4 -->
+                    <span class="Bold-theme-hook-DO-NOT-DELETE bold_cart_item_total" style="display:none !important;"></span>{{ ro_line_item_price | money }}
+                  </span>
+                  <!-- changed item.line_price to ro_line_item_price bold 3-4 -->
+                  {% if item.original_line_price != ro_line_item_price %}
+                    {% for discount in item.discounts %}
+                      <small class="cart-item__discount">
+                        {{ discount.title }}
+                      </small>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+      {% endfor %}
+
+      <div class="cart__row">
+        <div class="grid">
+          {% comment %}
+            Optional, add a textarea for special notes
+              - Your theme settings can turn this on or off. Default is on.
+              - Make sure you have name="note" for the message to be submitted properly
+          {% endcomment %}
+          {% if section.settings.cart_notes_enable %}
+            {% assign noteSize = cart.note | size %}
+            <div class="grid__item post-large--five-twelfths">
+              <button type="button" class="text-link cart__note-add{% if noteSize > 0 %} is-hidden{% endif %}">
+                {{ 'cart.label.add_note' | t }}
+              </button>
+              <div class="cart__note{% if noteSize > 0 %} is-active{% endif %}">
+                <label for="CartSpecialInstructions">{{ 'cart.general.note' | t }}</label>
+                <textarea name="note" class="input-full" id="CartSpecialInstructions">{{ cart.note }}</textarea>
+              </div>
+            </div>
+          {% endif %}
+          <div class="grid__item text-right{% if section.settings.cart_notes_enable %} post-large--seven-twelfths{% endif %}">
+            <p>
+              <span class="cart__subtotal-title">{{ 'cart.general.subtotal' | t }}</span>
+              
+              <!-- changed cart.total_price to ro_cart_total bold 3-4 -->
+              <span class="h5 cart__subtotal"><span class="Bold-theme-hook-DO-NOT-DELETE bold_cart_total" style="display:none !important;"></span>{{ ro_cart_total | money }}</span>
+              {% if cart.total_discounts > 0 %}
+                {% assign savings = cart.total_discounts | money %}
+                <small class="cart-subtotal__savings">{{ 'cart.general.savings_html' | t: price: savings }}</small>
+              {% endif %}
+            </p>
+            <p><em>{{ 'cart.general.shipping_at_checkout' | t }}</em></p>
+
+            {% comment %}
+              Continue shopping button
+            {% endcomment %}
+            
+            <!-- bold 3-3 code input -->
+            <input name="shopify_customer_id" type="hidden" value="{{ customer.id }}" > 
+            <input name="email" type="hidden" value="{{ customer.email }}" > 
+            <input name="address1" type="hidden" value="{{ customer.default_address.address1 }}" > 
+            <input name="address2" type="hidden" value="{{ customer.default_address.address2 }}" > 
+            <input name="city" type="hidden" value="{{ customer.default_address.city }}" > 
+            <input name="company" type="hidden" value="{{ customer.default_address.company }}" > 
+            <input name="country" type="hidden" value="{{ customer.default_address.country }}" > 
+            <input name="first_name" type="hidden" value="{{ customer.default_address.first_name }}" > 
+            <input name="last_name" type="hidden" value="{{ customer.default_address.last_name }}" > 
+            <input name="phone" type="hidden" value="{{ customer.default_address.phone }}" > 
+            <input name="province" type="hidden" value="{{ customer.default_address.province }}" > 
+            <input name="zip" type="hidden" value="{{ customer.default_address.zip }}" >
+            {% include 'bold-ro-cart' %}
+            
+            <a class="btn--secondary" href="/collections/all">{{ 'cart.general.continue_shopping' | t }}</a>
+
+            <button type="submit" name="update" class="btn--secondary update-cart">{{ 'cart.general.update' | t }}</button>
+            <button type="submit" name="checkout" class="btn">{{ 'cart.general.checkout' | t }}</button>
+
+            {% if additional_checkout_buttons %}
+    			<div class="additional-checkout-buttons">
+        		{{ content_for_additional_checkout_buttons }}
+    			</div>
+			{% endif %}
+          </div>
+        </div>
+
+      </div>
+      
+
+    </form>
+
+  {% else %}
+    {% comment %}
+      The cart is empty
+    {% endcomment %}
+    <h2>{{ 'cart.general.title' | t }}</h2>
+    <p>{{ 'cart.general.empty' | t }}</p>
+    <p>{{ 'cart.general.continue_browsing_html' | t }}</p>
+  {% endif %}
+</div>
+
+
+{% schema %}
+  {
+    "name": "Cart page",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "cart_notes_enable",
+        "label": "Enable order notes"
+      }
+    ]
+  }
+{% endschema %}

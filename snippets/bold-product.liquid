@@ -1,0 +1,49 @@
+{%- comment -%}
+============================================================================================================
+    BOLD-PRODUCT LIGHT VERSION - HANDLE HIDDEN PRODUCTS
+============================================================================================================
+{%- endcomment -%}
+
+{%- unless bold-product.id == blank -%}
+	{%- if bold-product.type == 'OPTIONS_HIDDEN_PRODUCT' or bold-product.type == 'MOTIVATOR_HIDDEN_PRODUCT' or bold-product.metafields.inventory.ShappifyHidden == "true" -%}
+
+		{%- assign bold_hidden_product = true -%}
+		{%- assign bold_trigger_break = false -%}
+
+		{%- comment -%} What is the reason for the hidden product? {%- endcomment -%}
+        {%- if bold-product.type == 'MOTIVATOR_HIDDEN_PRODUCT' -%}
+			{%- assign reason = 'motivator-hidden-product' -%}
+        {%- elsif bold-product.type == 'OPTIONS_HIDDEN_PRODUCT' -%}
+			{%- assign reason = 'options-hidden-product' -%}
+        {%- elsif bold-product.metafields.inventory.ShappifyHidden == "true" -%}
+			{%- assign reason = 'duplicate-and-hide' -%}
+        {%- else -%}
+			{%- assign reason = 'other' -%}
+        {%- endif -%}
+
+		{%- capture hidden_product_output -%}
+      		{%- case hide_action -%}
+        		{%- when 'break' -%}
+          			{%- capture error_page_check -%}{%- include 'bold-product-error' with reason, product: bold-product -%}{%- endcapture -%}
+          			{%- unless error_page_check contains 'Liquid error: Could not find asset'-%}
+            			{{- error_page_check -}}
+          			{%- else -%}
+            			<p class='bold_not_available'>Product is not available</p>
+          			{%- endunless -%}
+
+          			{%- assign bold_trigger_break = true -%}
+
+        		{%- when 'skip' -%}
+          			{%- continue -%}
+
+        		{%- when 'header' -%}
+          			{%- if template == 'product' -%}<meta name="robots" content="noindex">{%- endif -%}
+
+      		{%- endcase -%}
+    	{%- endcapture-%}
+
+  	{%- endif -%}
+{%- endunless -%}
+
+{%- if bold_hidden_product -%}{{- hidden_product_output -}}{%- endif -%}
+{%- if bold_trigger_break == true -%}{%- break -%}{%- endif -%}
